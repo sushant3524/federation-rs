@@ -36,7 +36,9 @@ mod js_types;
 
 use js_types::CompositionError;
 
-use apollo_federation_types::build::{BuildError, BuildOutput, BuildResult, SubgraphDefinition};
+pub use apollo_federation_types::build::{
+    BuildError, BuildOutput, BuildResult, SubgraphDefinition,
+};
 
 /// The `harmonize` function receives a [`Vec<SubgraphDefinition>`] and invokes JavaScript
 /// composition on it, either returning the successful output, or a list of error messages.

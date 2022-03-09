@@ -36,7 +36,7 @@ mod js_types;
 
 use js_types::CompositionError;
 
-use apollo_federation_types::build::{
+pub use apollo_federation_types::build::{
     BuildError, BuildErrors, BuildOutput, BuildResult, SubgraphDefinition,
 };
 
