@@ -36,3 +36,44 @@ export function plan(
     return { errors: [e] };
   }
 }
+
+import { GraphQLSchema } from "graphql";
+
+import { Schema } from "@apollo/federation-internals";
+
+let SCHEMA: GraphQLSchema;
+let COMPOSED_SCHEMA: Schema;
+let PLANNER: QueryPlanner;
+
+export function create(schemaString: string) {
+  COMPOSED_SCHEMA = buildSchema(schemaString);
+  const apiSchema = COMPOSED_SCHEMA.toAPISchema();
+  SCHEMA = apiSchema.toGraphQLJSSchema();
+  PLANNER = new QueryPlanner(COMPOSED_SCHEMA);
+}
+
+export function plan2(
+  operationString: string,
+  operationName?: string
+): ExecutionResult<QueryPlan> {
+  try {
+    const operationDocument = parse(operationString);
+
+    // Federation does some validation, but not all.  We need to do
+    // all default validations that are provided by GraphQL.
+    const validationErrors = validate(SCHEMA, operationDocument);
+    if (validationErrors.length > 0) {
+      return { errors: validationErrors };
+    }
+
+    const operation = operationFromDocument(
+      COMPOSED_SCHEMA,
+      operationDocument,
+      operationName
+    );
+
+    return { data: PLANNER.buildQueryPlan(operation) };
+  } catch (e) {
+    return { errors: [e] };
+  }
+}

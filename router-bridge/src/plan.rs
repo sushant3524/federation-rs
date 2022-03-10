@@ -5,7 +5,10 @@
 use crate::error::Error;
 use crate::js::Js;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Debug, Display, Formatter},
+    sync::Arc,
+};
 use thiserror::Error;
 
 #[derive(Debug, Serialize)]
@@ -33,6 +36,17 @@ impl QueryPlanOptions {
 pub struct OperationalContext {
     /// The graphQL schema
     pub schema: String,
+    /// The graphQL query
+    pub query: String,
+    /// The operation name
+    pub operation_name: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+/// This is the context which provides
+/// all the information to plan a query against a schema
+pub struct OperationalContext2 {
     /// The graphQL query
     pub query: String,
     /// The operation name
@@ -142,10 +156,53 @@ impl PlanningError {
     }
 }
 
+/// The `BridgePLanner`
+#[derive(Debug, Clone)]
+pub struct BridgePlanner {
+    js: Js,
+}
+
+impl BridgePlanner {
+    /// Instantiate a BridgePlanner with a schema
+    pub fn new(schema: Arc<String>) -> Result<Self, Error> {
+        let mut js = Js::new().with_parameter("schemaString", &*schema)?;
+
+        let result = js.apply_script(
+            "planner_create",
+            include_str!("../js-dist/planner_create.js"),
+        );
+
+        result?;
+
+        Ok(Self { js })
+    }
+
+    /// Create the query plan by calling in to JS.
+    ///
+    /// We use a generic here because the output type `QueryPlan` is part of the router.
+    /// Since this bridge is temporary we don't want to declare the `QueryPlan` structure in this crate.
+    /// We will instead let the caller define what structure the plan result should be deserialized into.
+    pub fn plan<T: DeserializeOwned + 'static>(
+        &self,
+        context: OperationalContext2,
+    ) -> Result<Result<T, PlanningErrors>, Error> {
+        let result = self
+            .js
+            .clone()
+            .with_parameter("queryString", context.query)?
+            .with_parameter("operationName", context.operation_name)?
+            .execute("planner_plan", include_str!("../js-dist/planner_plan.js"));
+
+        result.map(|inner: Result<T, Vec<PlanningError>>| {
+            inner.map_err(|errors| PlanningErrors { errors })
+        })
+    }
+}
+
 /// Create the query plan by calling in to JS.
 ///
 /// We use a generic here because the output type `QueryPlan` is part of the router.
-/// Since this bridge is temporary we don't to declare the `QueryPlan` structure in this crate.
+/// Since this bridge is temporary we don't want to declare the `QueryPlan` structure in this crate.
 /// We will instead let the caller define what structure the plan result should be deserialized into.
 pub fn plan<T: DeserializeOwned + 'static>(
     context: OperationalContext,
