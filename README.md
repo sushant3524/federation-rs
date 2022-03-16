@@ -1,6 +1,10 @@
 # `federation-rs`
 
-This repository is responsible for all of the [deno](https://deno.land)-powered TypeScript <--> Rust interop. Currently this includes composition and query planning.
+This repository is responsible for all of the [deno](https://deno.land)-powered TypeScript <--> Rust interop. Currently this includes composition and query planning. Note that each subdirectory has its own README and you may want to look there first.
+
+## xtask
+
+`xtask` is incredibly important to how this repository is managed. You should take a look at that README to get a handle on the tools available to you.
 
 ## Branch Strategy
 
@@ -27,3 +31,10 @@ Much like `harmonizer`, there are two sibling versions of `supergraph`. This wor
 ### `apollo-federation-types`
 
 The `apollo-federation-types` crate provides types for all versions of `harmonizer` and `supergraph`, and is used by [Rover](https://github.com/apollographql/rover) to read the output from the `supergraph` binary.
+
+## Help! I can't refer to `harmonizer` by git URL or path!
+
+You'll quickly notice that `{supergraph/harmonizer}-{0,2}` is not the actual crate that will be published and that you can't refer to any of the crates in this repository by path or by git url. This is true, but you can use `xtask` to make a local version of what would be published and refer to that to test things locally if you need to.
+
+If you run `cargo xtask prep` from the root workspace, `xtask` will create two directories: `stage-0` and `stage-2`, each of these will contain the code that is compiled and eventually published. You can then refer to the correct version of harmonizer from another crate by path and.
+
