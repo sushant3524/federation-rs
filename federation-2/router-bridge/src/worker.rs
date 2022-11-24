@@ -31,6 +31,7 @@ pub(crate) struct JsWorker {
 
 impl JsWorker {
     pub(crate) fn new(worker_source_code: &'static str) -> Self {
+        tracing::info!("Building a new JsWorker...");
         let response_senders: Arc<Mutex<HashMap<String, oneshot::Sender<serde_json::Value>>>> =
             Default::default();
 
@@ -48,10 +49,10 @@ impl JsWorker {
                     if let Err(e) = sender.send(json_payload.payload.clone()) {
                         // Keep our plan in our failed plan cache. Someone else might want it.
                         tracing::error!("jsworker: couldn't send json response: {:?}", e);
-                        my_unsent_plans
-                            .lock()
-                            .await
-                            .insert(json_payload.id, json_payload.payload);
+                        // my_unsent_plans
+                            // .lock()
+                            // .await
+                            // .insert(json_payload.id, json_payload.payload);
                     }
                 } else {
                     tracing::error!(
