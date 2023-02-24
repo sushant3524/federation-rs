@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@apollo/core-schema": "^0.3.0",
-    "@apollo/federation-internals": "^2.3.0-beta.3",
+    "@apollo/federation-internals": "https://pkg.csb.dev/apollographql/federation/commit/1aec977a/@apollo/federation-internals",
     "@apollo/query-planner": "https://pkg.csb.dev/apollographql/federation/commit/1aec977a/@apollo/query-planner",
     "@apollo/utils.usagereporting": "^1.0.0",
     "apollo-reporting-protobuf": "^3.3.1",
