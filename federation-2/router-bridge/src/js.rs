@@ -98,6 +98,9 @@ impl Js {
             "--ignored".to_string(),
             "--max-heap-size".to_string(),
             heap_size,
+            "--track-gc".to_string(),
+            "--track-gc-object-stats".to_string(),
+            "--prof".to_string(),
         ];
 
         // Deno will warn us if we supply flags it doesn't recognise.

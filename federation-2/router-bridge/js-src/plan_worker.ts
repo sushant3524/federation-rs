@@ -34,6 +34,8 @@ enum PlannerEventKind {
   Exit = "Exit",
   ApiSchema = "ApiSchema",
   Introspect = "Introspect",
+  DumpResources = "DumpResources",
+  GC = "GC",
 }
 interface UpdateSchemaEvent {
   kind: PlannerEventKind.UpdateSchema;
@@ -58,6 +60,14 @@ interface IntrospectEvent {
   schemaId: number;
 }
 
+interface GC {
+  kind: PlannerEventKind.GC;
+}
+
+interface DumpResources {
+  kind: PlannerEventKind.DumpResources;
+}
+
 interface Exit {
   kind: PlannerEventKind.Exit;
   schemaId: number;
@@ -67,7 +77,9 @@ type PlannerEvent =
   | PlanEvent
   | ApiSchemaEvent
   | IntrospectEvent
-  | Exit;
+  | Exit
+  | DumpResources
+  | GC;
 type PlannerEventWithId = {
   id: string;
   payload: PlannerEvent;
@@ -213,6 +225,26 @@ async function run() {
       const { id, payload: event } = await receive();
       try {
         switch (event?.kind) {
+          case PlannerEventKind.DumpResources:
+            print("eyo");
+
+            print(
+              JSON.stringify(
+                // @ts-expect-error
+                __bootstrap.primordials.ObjectFromEntries(
+                  Deno.core.ops.op_metrics()
+                ),
+                null,
+                2
+              )
+            );
+            await send({ id, payload: null });
+            break;
+          case PlannerEventKind.GC:
+            // @ts-expect-error
+            print(globalThis.gc());
+            await send({ id, payload: null });
+            break;
           case PlannerEventKind.UpdateSchema:
             const updateResult = updateQueryPlanner(
               event.schema,

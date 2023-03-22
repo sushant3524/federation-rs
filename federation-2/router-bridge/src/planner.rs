@@ -521,6 +521,22 @@ where
             .await
     }
 
+    /// Dump deno resources
+    pub async fn dump_resources(&self) -> Result<(), crate::error::Error> {
+        self.worker
+            .request::<_, serde_json::Value>(PlanCmd::DumpResources)
+            .await?;
+        Ok(())
+    }
+
+    /// Force deno to run GC
+    pub async fn gc(&self) -> Result<(), crate::error::Error> {
+        self.worker
+            .request::<_, serde_json::Value>(PlanCmd::GC)
+            .await?;
+        Ok(())
+    }
+
     /// Generate the API schema from the current schema
     pub async fn api_schema(&self) -> Result<ApiSchema, crate::error::Error> {
         self.worker
@@ -586,6 +602,10 @@ enum PlanCmd {
     Introspect { query: String, schema_id: u64 },
     #[serde(rename_all = "camelCase")]
     Exit { schema_id: u64 },
+    #[serde(rename_all = "camelCase")]
+    DumpResources,
+    #[serde(rename_all = "camelCase")]
+    GC,
 }
 #[derive(Serialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
