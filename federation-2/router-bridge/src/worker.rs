@@ -1,3 +1,4 @@
+use super::satellite::launch;
 use crate::error::Error;
 use async_channel::{bounded, Receiver, Sender};
 use deno_core::Op;
@@ -15,6 +16,7 @@ use std::hash::Hasher;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::thread::JoinHandle;
+use std::time::Duration;
 use tokio::sync::{oneshot, Mutex};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -29,6 +31,7 @@ pub(crate) struct JsWorker {
     sender: Sender<JsonPayload>,
     handle: Option<JoinHandle<()>>,
     unsent_plans: Arc<Mutex<HashMap<String, serde_json::Value>>>,
+    schema: Mutex<HashMap<u64, Vec<u8>>>,
 }
 
 impl JsWorker {
@@ -46,6 +49,7 @@ impl JsWorker {
 
         tokio::spawn(async move {
             while let Ok(json_payload) = receiver.recv().await {
+                tracing::debug!("QP payload: {:?}", json_payload);
                 if let Some(sender) = cloned_senders.lock().await.remove(&json_payload.id) {
                     if let Err(e) = sender.send(json_payload.payload.clone()) {
                         // Keep our plan in our failed plan cache. Someone else might want it.
@@ -107,6 +111,7 @@ impl JsWorker {
             response_receivers: Default::default(),
             response_senders,
             unsent_plans,
+            schema: Mutex::new(Default::default()),
         }
     }
 
@@ -115,9 +120,55 @@ impl JsWorker {
         command: Request,
     ) -> Result<Response, Error>
     where
-        Request: std::hash::Hash + Serialize + Send + Debug + 'static,
+        Request: std::hash::Hash + Clone + Serialize + Send + Debug + 'static,
         Response: DeserializeOwned + Send + Debug + 'static,
     {
+        tracing::debug!("PROCESSING A command: {:?}", command);
+
+        let json_payload =
+            serde_json::to_value(command.clone()).map_err(|e| Error::ParameterSerialization {
+                message: format!("deno: couldn't serialize request : `{e:?}`"),
+                name: "request".to_string(),
+            })?;
+        tracing::debug!("json_payload looks like this: {}", json_payload);
+        let sub_command = if json_payload["kind"] == "ApiSchema" {
+            "apiSchema"
+        } else if json_payload["kind"] == "UpdateSchema" {
+            let mut guard = self.schema.lock().await;
+            let key = json_payload["schemaId"].as_u64().unwrap();
+            let value = json_payload["schema"].as_str().unwrap().as_bytes().to_vec();
+            guard.insert(key, value);
+            "no-op"
+        } else if json_payload["kind"] == "Plan" {
+            "plan"
+        } else {
+            "huh"
+        };
+        // Interpose before DENO and run result in spawned node
+        if sub_command == "plan" {
+            // tokio::fs::read("/Users/garypen/dev/router/examples/graphql/supergraph.graphql")
+            // .await
+            // .expect("it read schema file");
+            // let payload =
+            // include_bytes!("/Users/garypen/dev/router/examples/graphql/supergraph.graphql");
+            let key = json_payload["schemaId"].as_u64().unwrap();
+
+            let guard = self.schema.lock().await;
+            let payload = guard.get(&key).unwrap();
+            let args = vec![
+                "/Users/garypen/dev/http_planner/dist/cli.js",
+                sub_command,
+                json_payload["query"].as_str().unwrap(),
+            ];
+
+            let output = launch("node", &args, payload, Duration::from_secs(10))
+                .await
+                .expect("node failed");
+            return serde_json::from_slice(&output).map_err(|e| {
+                Error::DenoRuntime(format!("request: couldn't receive response {e}"))
+            });
+        }
+
         // Let's see if we already have this query plan in our failed delivery cache
         let mut hasher = DefaultHasher::new();
         command.hash(&mut hasher);

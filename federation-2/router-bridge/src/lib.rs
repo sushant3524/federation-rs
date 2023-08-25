@@ -10,4 +10,5 @@ pub mod error;
 pub mod introspect;
 mod js;
 pub mod planner;
+mod satellite;
 mod worker;
