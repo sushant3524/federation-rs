@@ -156,7 +156,7 @@ impl JsWorker {
             let guard = self.schema.lock().await;
             let payload = guard.get(&key).unwrap();
             let args = vec![
-                "/Users/garypen/dev/http_planner/dist/cli.js",
+                "/dist/node_planner/dist/cli.js",
                 sub_command,
                 json_payload["query"].as_str().unwrap(),
             ];
