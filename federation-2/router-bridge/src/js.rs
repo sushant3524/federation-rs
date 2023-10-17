@@ -105,6 +105,7 @@ impl Js {
         // The first flag is argv[0], so provide an ignorable value
         let flags = vec![
             "--ignored".to_string(),
+            "--expose-gc".to_string(),
             "--max-heap-size".to_string(),
             heap_size,
         ];

@@ -254,6 +254,8 @@ async function run() {
               event.schemaId
             );
             await send({ id, payload: updateResult });
+            print("doing gc here");
+            (globalThis as any).gc();
             break;
           case PlannerEventKind.Plan:
             const planResult = planners
