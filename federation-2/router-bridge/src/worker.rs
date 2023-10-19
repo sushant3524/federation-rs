@@ -267,6 +267,7 @@ impl JsWorker {
 
 impl Drop for JsWorker {
     fn drop(&mut self) {
+        println!("DROPPING JsWorker");
         self.quit().unwrap_or_else(|e| eprintln!("{e}"));
     }
 }

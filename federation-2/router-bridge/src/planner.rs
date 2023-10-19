@@ -592,6 +592,7 @@ where
     T: DeserializeOwned + Send + Debug + 'static,
 {
     fn drop(&mut self) {
+        println!("DROPPING Planner");
         // Send a PlanCmd::Exit signal
         let worker_clone = self.worker.clone();
         let schema_id = self.schema_id;
