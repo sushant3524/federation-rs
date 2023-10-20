@@ -405,7 +405,7 @@ pub struct Planner<T>
 where
     T: DeserializeOwned + Send + Debug + 'static,
 {
-    worker: Arc<JsWorker>,
+    worker: JsWorker,
     schema_id: u64,
     t: PhantomData<T>,
 }
@@ -470,8 +470,6 @@ where
             }
         }
 
-        let worker = Arc::new(worker);
-
         Ok(Self {
             worker,
             schema_id,
@@ -487,8 +485,9 @@ where
     ) -> Result<Self, Vec<PlannerError>> {
         let schema_id: u64 = rand::random();
 
-        let worker_is_set_up = self
-            .worker
+        let worker = JsWorker::new(include_str!("../bundled/plan_worker.js"));
+
+        let worker_is_set_up = worker
             .request::<PlanCmd, BridgeSetupResult<serde_json::Value>>(PlanCmd::UpdateSchema {
                 schema,
                 config,
@@ -519,7 +518,7 @@ where
         }
 
         Ok(Self {
-            worker: self.worker.clone(),
+            worker,
             schema_id,
             t: PhantomData,
         })
@@ -593,16 +592,16 @@ where
 {
     fn drop(&mut self) {
         // Send a PlanCmd::Exit signal
-        let worker_clone = self.worker.clone();
+        // let worker_clone = self.worker.clone();
+        let my_worker = std::mem::take(&mut self.worker);
         let schema_id = self.schema_id;
         let _ = std::thread::spawn(move || {
             let runtime = tokio::runtime::Builder::new_current_thread()
                 .build()
                 .unwrap();
 
-            let _ = runtime.block_on(async move {
-                worker_clone.send(None, PlanCmd::Exit { schema_id }).await
-            });
+            let _ = runtime
+                .block_on(async move { my_worker.send(None, PlanCmd::Exit { schema_id }).await });
         })
         .join();
     }

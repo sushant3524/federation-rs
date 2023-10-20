@@ -23,10 +23,11 @@ struct JsonPayload {
     payload: serde_json::Value,
 }
 
+#[derive(Default)]
 pub(crate) struct JsWorker {
     response_senders: Arc<Mutex<HashMap<String, oneshot::Sender<serde_json::Value>>>>,
     response_receivers: Arc<Mutex<HashMap<String, oneshot::Receiver<serde_json::Value>>>>,
-    sender: Sender<JsonPayload>,
+    sender: Option<Sender<JsonPayload>>,
     handle: Option<JoinHandle<()>>,
     unsent_plans: Arc<Mutex<HashMap<String, serde_json::Value>>>,
 }
@@ -102,7 +103,7 @@ impl JsWorker {
         });
 
         Self {
-            sender,
+            sender: Some(sender),
             handle: Some(handle),
             response_receivers: Default::default(),
             response_senders,
@@ -177,6 +178,8 @@ impl JsWorker {
         };
 
         self.sender
+            .as_ref()
+            .unwrap()
             .send(json_payload)
             .await
             .map_err(|e| Error::DenoRuntime(format!("send: couldn't send request {e}")))?;
