@@ -28,3 +28,29 @@ process = { env: { NODE_ENV: "production" }, argv: [] };
 // need to be initialized as empty objects.
 global = {};
 exports = {};
+console = {
+  log: (message) => Deno.core.print(`${message}\n`),
+};
+__dirname = "";
+
+globalThis.TextDecoder = class TextDecoderPolyfill {
+  constructor() {}
+
+  decode(buffer) {
+    if (buffer) {
+      return Deno.core.ops.op_text_decoder(buffer);
+    }
+    return "";
+  }
+};
+
+globalThis.TextEncoder = class TextEncoderPolyfill {
+  constructor() {}
+
+  decode(str) {
+    if (buffer) {
+      return Deno.core.ops.op_text_encoder(str);
+    }
+    return "";
+  }
+};

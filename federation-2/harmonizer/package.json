@@ -1,12 +1,12 @@
 {
   "name": "@apollo/harmonizer-2",
   "private": true,
-  "version": "2.7.2",
+  "version": "https://pkg.csb.dev/apollographql/federation/commit/ddaf0dd2/@apollo/composition",
   "description": "Apollo Federation Harmonizer JS Entrypoint",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "make-dir bundled js-dist && rm -f tsconfig.tsbuildinfo && tsc --build --verbose && node esbuild/bundler.js && cp js-dist/runtime.js js-dist/do_compose.js bundled/",
+    "build": "make-dir bundled js-dist && rm -f tsconfig.tsbuildinfo && tsc --build --verbose && node esbuild/bundler.js && cp js-dist/runtime.js js-dist/do_compose.js bundled/ && cp node_modules/fake-composition-wasm/fake_composition_wasm_bg.wasm bundled/",
     "clean": "rm -rf ./node_modules ./js-dist ./bundled ./tsconfig.tsbuildinfo",
     "lint": "prettier --check ./esbuild/**/*.js ./js-src/**/*.ts ./js-src/**/*.js",
     "format": "prettier --write ./esbuild/**/*.js ./js-src/**/*.ts ./js-src/**/*.js"
@@ -29,7 +29,13 @@
     "npm": ">=7 <10"
   },
   "dependencies": {
-    "@apollo/composition": "2.7.2"
+    "@apollo/composition": "https://pkg.csb.dev/apollographql/federation/commit/ddaf0dd2/@apollo/composition",
+    "@apollo/federation-internals": "https://pkg.csb.dev/apollographql/federation/commit/ddaf0dd2/@apollo/federation-internals",
+    "@apollo/gateway": "https://pkg.csb.dev/apollographql/federation/commit/ddaf0dd2/@apollo/gateway",
+    "@apollo/query-graphs": "https://pkg.csb.dev/apollographql/federation/commit/ddaf0dd2/@apollo/query-graphs",
+    "@apollo/query-planner": "https://pkg.csb.dev/apollographql/federation/commit/ddaf0dd2/@apollo/query-planner",
+    "@apollo/subgraph": "https://pkg.csb.dev/apollographql/federation/commit/ddaf0dd2/@apollo/subgraph",
+    "fake-composition-wasm": "https://pkg.csb.dev/apollographql/federation/commit/ddaf0dd2/fake-composition-wasm"
   },
   "peerDependencies": {
     "graphql": "^15.7.0 || ^16.0.0"

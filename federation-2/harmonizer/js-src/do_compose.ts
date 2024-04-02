@@ -1,4 +1,4 @@
-import { composition } from ".";
+import type { composition } from ".";
 import type { CompositionResult } from "./types";
 
 /**

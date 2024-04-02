@@ -8,8 +8,33 @@ let denoFsPlugin = {
     }));
 
     build.onLoad({ filter: /.*/, namespace: "deno-fs" }, () => ({
-      contents:
-        "module.exports = { existsSync: Deno.ensureFileSync, writeFileSync: Deno.writeTextFile }",
+      contents: `
+        module.exports = {
+          existsSync: Deno.ensureFileSync,
+          writeFileSync: Deno.writeTextFile,
+          readFileSync: (...args) => {
+            return Buffer.from(Deno.core.ops.op_read_file(...args));
+          }
+        }
+      `,
+      loader: "js",
+    }));
+  },
+};
+
+let denoUtilPlugin = {
+  name: "util",
+  setup(build) {
+    build.onResolve({ filter: /^util$/ }, (args) => ({
+      path: args.path,
+      namespace: "deno-util",
+    }));
+
+    build.onLoad({ filter: /.*/, namespace: "deno-util" }, () => ({
+      contents: `module.exports = {
+        TextDecoder: globalThis.TextDecoder,
+        TextEncoder: globalThis.TextEncoder,
+      }`,
       loader: "js",
     }));
   },
@@ -26,7 +51,7 @@ require("esbuild")
     globalName: "composition_bridge",
     outfile: "./bundled/composition_bridge.js",
     format: "iife",
-    plugins: [denoFsPlugin],
+    plugins: [denoFsPlugin, denoUtilPlugin],
     define: { Buffer: "buffer_shim" },
     inject: ["./esbuild/buffer_shim.js", "./esbuild/url_shim.js"],
   })

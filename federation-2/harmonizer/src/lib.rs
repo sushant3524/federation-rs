@@ -29,7 +29,7 @@ composition implementation while we work toward something else.
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations, nonstandard_style)]
 #![warn(missing_docs, future_incompatible, unreachable_pub, rust_2018_idioms)]
-use deno_core::{op, Extension, JsRuntime, Op, OpState, RuntimeOptions, Snapshot};
+use deno_core::{op, op2, Extension, JsRuntime, Op, OpState, RuntimeOptions, Snapshot};
 use std::borrow::Cow;
 use std::sync::mpsc::{channel, Sender};
 
@@ -72,7 +72,7 @@ pub fn harmonize_limit(
     // Use our snapshot to provision our new runtime
     let options = RuntimeOptions {
         startup_snapshot: Some(Snapshot::Static(buffer)),
-        extensions: vec![my_ext],
+        extensions: vec![my_ext, my_extension::init_ops_and_esm()],
         ..Default::default()
     };
     let mut runtime = JsRuntime::new(options);
@@ -147,6 +147,33 @@ fn op_composition_result(state: &mut OpState, value: serde_json::Value) {
         .clone();
     // send the build result
     sender.send(build_result).expect("channel must be open");
+}
+
+deno_core::extension!(
+    my_extension,
+    ops = [op_text_decoder, op_text_encoder, op_read_file]
+);
+
+#[op2]
+#[string]
+fn op_text_decoder(#[buffer(copy)] bytes: Vec<u8>) -> Result<String, deno_core::error::AnyError> {
+    Ok(String::from_utf8(bytes).expect("unable to decode text"))
+}
+
+#[op]
+fn op_text_encoder(
+    _state: &mut OpState,
+    value: serde_json::Value,
+) -> Result<Vec<u8>, deno_core::error::AnyError> {
+    Ok(value.to_string().into_bytes())
+}
+
+#[op]
+fn op_read_file(
+    _state: &mut OpState,
+    _value: serde_json::Value,
+) -> Result<Vec<u8>, deno_core::error::AnyError> {
+    Ok(include_bytes!("../bundled/fake_composition_wasm_bg.wasm").to_vec())
 }
 
 #[cfg(test)]

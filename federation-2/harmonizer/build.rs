@@ -183,10 +183,13 @@ fn get_underlying_composition_npm_module_version() -> Version {
     };
 
     let parsed_version = Version::parse(&version_string).unwrap_or_else(|_| {
-        panic!(
-            "version for `{}`, `{}`, is not valid semver",
-            &dep_name, &version_string
-        )
+        "0.0.0"
+            .parse()
+            .expect("Could not parse 0.0.0 as semver version")
+        // panic!(
+        //     "version for `{}`, `{}`, is not valid semver",
+        //     &dep_name, &version_string
+        // )
     });
 
     npm_manifest_contents["version"] = JsonValue::from(version_string);
