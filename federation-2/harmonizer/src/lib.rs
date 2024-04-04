@@ -28,7 +28,7 @@ composition implementation while we work toward something else.
 
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations, nonstandard_style)]
-#![warn(missing_docs, future_incompatible, unreachable_pub, rust_2018_idioms)]
+#![warn(future_incompatible, unreachable_pub, rust_2018_idioms)]
 use deno_core::{op, op2, Extension, JsRuntime, Op, OpState, RuntimeOptions, Snapshot};
 use std::borrow::Cow;
 use std::sync::mpsc::{channel, Sender};
@@ -122,6 +122,7 @@ pub fn harmonize_limit(
 
 #[op]
 fn op_composition_result(state: &mut OpState, value: serde_json::Value) {
+    println!("op_composition_result");
     // the JavaScript object can contain an array of errors
     let deserialized_result: Result<Result<BuildOutput, Vec<CompositionError>>, serde_json::Error> =
         serde_json::from_value(value);

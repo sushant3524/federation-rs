@@ -45,7 +45,7 @@ require("esbuild")
   .build({
     entryPoints: ["./js-dist/index.js"],
     bundle: true,
-    minify: true,
+    // minify: true,
     sourcemap: true,
     target: "es2020",
     globalName: "composition_bridge",

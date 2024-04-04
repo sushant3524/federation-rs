@@ -36,35 +36,35 @@ fn main() {
 fn bundle_for_deno(current_dir: &Path) {
     let npm = which::which("npm").expect("You must have npm installed to build this crate.");
 
-    if cfg!(debug_assertions) {
-        // in debug mode we want to update the package-lock.json
-        // so we run `npm install`
-        println!(
-            "cargo:warning=running `npm install` in {}",
-            &current_dir.display()
-        );
-        assert!(Command::new(&npm)
-            .current_dir(current_dir)
-            .args(["install"])
-            .status()
-            .expect("Could not get status of `npm install`")
-            .success());
-    } else {
-        // in release mode, we're probably running in CI
-        // and want the version we publish to match
-        // the git source
-        // so we run `npm ci`.
-        println!(
-            "cargo:warning=running `npm ci` in {}",
-            &current_dir.display()
-        );
-        assert!(Command::new(&npm)
-            .current_dir(current_dir)
-            .args(["ci"])
-            .status()
-            .expect("Could not get status of `npm ci`")
-            .success());
-    }
+    // if cfg!(debug_assertions) {
+    //     // in debug mode we want to update the package-lock.json
+    //     // so we run `npm install`
+    //     println!(
+    //         "cargo:warning=running `npm install` in {}",
+    //         &current_dir.display()
+    //     );
+    //     assert!(Command::new(&npm)
+    //         .current_dir(current_dir)
+    //         .args(["install"])
+    //         .status()
+    //         .expect("Could not get status of `npm install`")
+    //         .success());
+    // } else {
+    //     // in release mode, we're probably running in CI
+    //     // and want the version we publish to match
+    //     // the git source
+    //     // so we run `npm ci`.
+    //     println!(
+    //         "cargo:warning=running `npm ci` in {}",
+    //         &current_dir.display()
+    //     );
+    //     assert!(Command::new(&npm)
+    //         .current_dir(current_dir)
+    //         .args(["ci"])
+    //         .status()
+    //         .expect("Could not get status of `npm ci`")
+    //         .success());
+    // }
 
     println!(
         "cargo:warning=running `npm run format` in {}",

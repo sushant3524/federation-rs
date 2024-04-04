@@ -47,8 +47,8 @@ globalThis.TextDecoder = class TextDecoderPolyfill {
 globalThis.TextEncoder = class TextEncoderPolyfill {
   constructor() {}
 
-  decode(str) {
-    if (buffer) {
+  encode(str) {
+    if (str) {
       return Deno.core.ops.op_text_encoder(str);
     }
     return "";
