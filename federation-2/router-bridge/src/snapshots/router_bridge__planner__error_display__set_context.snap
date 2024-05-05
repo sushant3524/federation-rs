@@ -12,7 +12,7 @@ expression: "serde_json::to_string_pretty(&planner.plan(\"query Query {\n       
           "kind": "Fetch",
           "serviceName": "Subgraph1",
           "variableUsages": [],
-          "operation": "query Query__Subgraph1__0{t{prop id u{id}}}",
+          "operation": "query Query__Subgraph1__0{t{prop id u{__typename id}}}",
           "operationKind": "query",
           "operationName": "Query__Subgraph1__0"
         },
@@ -62,5 +62,5 @@ expression: "serde_json::to_string_pretty(&planner.plan(\"query Query {\n       
       ]
     }
   },
-  "formattedQueryPlan": "QueryPlan {\n  Sequence {\n    Fetch(service: \"Subgraph1\") {\n      {\n        t {\n          prop\n          id\n          u {\n            id\n          }\n        }\n      }\n    },\n    Flatten(path: \"t.u\") {\n      Fetch(service: \"Subgraph1\") {\n        {\n          ... on U {\n            __typename\n            id\n          }\n        } =>\n        {\n          ... on U {\n            id\n            field(a: $Subgraph1_U_field_a)\n          }\n        }\n      },\n    },\n  },\n}"
+  "formattedQueryPlan": "QueryPlan {\n  Sequence {\n    Fetch(service: \"Subgraph1\") {\n      {\n        t {\n          prop\n          id\n          u {\n            __typename\n            id\n          }\n        }\n      }\n    },\n    Flatten(path: \"t.u\") {\n      Fetch(service: \"Subgraph1\") {\n        {\n          ... on U {\n            __typename\n            id\n          }\n        } =>\n        {\n          ... on U {\n            id\n            field(a: $Subgraph1_U_field_a)\n          }\n        }\n      },\n    },\n  },\n}"
 }
