@@ -40,7 +40,7 @@ directive @federation__sourceField repeatable on FIELD_DEFINITION
 
 directive @federation__context(name: String!) repeatable on INTERFACE | OBJECT | UNION
 
-directive @federation__fromContext(field: String) on ARGUMENT_DEFINITION
+directive @federation__fromContext(field: federation__ContextFieldValue) on ARGUMENT_DEFINITION
 
 directive @stream on FIELD
 
@@ -66,7 +66,7 @@ scalar federation__Scope
 
 scalar federation__Policy
 
-scalar federation__context
+scalar federation__ContextFieldValue
 
 union AccountType = PasswordAccount | SMSAccount
 

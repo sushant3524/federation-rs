@@ -115,7 +115,7 @@ type U
         {
           context: "Subgraph1__context"
           name: "a"
-          type: "String!"
+          type: "String"
           selection: "{ prop }"
         }
       ]

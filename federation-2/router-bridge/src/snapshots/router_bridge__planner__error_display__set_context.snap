@@ -42,9 +42,9 @@ expression: "serde_json::to_string_pretty(&planner.plan(\"query Query {\n       
               }
             ],
             "variableUsages": [
-              "Subgraph1_U_field_a"
+              "contextualArgument_1_0"
             ],
-            "operation": "query Query__Subgraph1__1($representations:[_Any!]!$Subgraph1_U_field_a:String!){_entities(representations:$representations){...on U{id field(a:$Subgraph1_U_field_a)}}}",
+            "operation": "query Query__Subgraph1__1($representations:[_Any!]!$contextualArgument_1_0:String){_entities(representations:$representations){...on U{field(a:$contextualArgument_1_0)}}}",
             "operationKind": "query",
             "operationName": "Query__Subgraph1__1",
             "contextRewrites": [
@@ -52,9 +52,10 @@ expression: "serde_json::to_string_pretty(&planner.plan(\"query Query {\n       
                 "kind": "KeyRenamer",
                 "path": [
                   "..",
+                  "... on T",
                   "prop"
                 ],
-                "renameKeyTo": "Subgraph1_U_field_a"
+                "renameKeyTo": "contextualArgument_1_0"
               }
             ]
           }
@@ -62,5 +63,5 @@ expression: "serde_json::to_string_pretty(&planner.plan(\"query Query {\n       
       ]
     }
   },
-  "formattedQueryPlan": "QueryPlan {\n  Sequence {\n    Fetch(service: \"Subgraph1\") {\n      {\n        t {\n          prop\n          id\n          u {\n            __typename\n            id\n          }\n        }\n      }\n    },\n    Flatten(path: \"t.u\") {\n      Fetch(service: \"Subgraph1\") {\n        {\n          ... on U {\n            __typename\n            id\n          }\n        } =>\n        {\n          ... on U {\n            id\n            field(a: $Subgraph1_U_field_a)\n          }\n        }\n      },\n    },\n  },\n}"
+  "formattedQueryPlan": "QueryPlan {\n  Sequence {\n    Fetch(service: \"Subgraph1\") {\n      {\n        t {\n          prop\n          id\n          u {\n            __typename\n            id\n          }\n        }\n      }\n    },\n    Flatten(path: \"t.u\") {\n      Fetch(service: \"Subgraph1\") {\n        {\n          ... on U {\n            __typename\n            id\n          }\n        } =>\n        {\n          ... on U {\n            field(a: $contextualArgument_1_0)\n          }\n        }\n      },\n    },\n  },\n}"
 }

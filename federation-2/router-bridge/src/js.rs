@@ -1,15 +1,8 @@
 use crate::error::Error;
 /// Wraps creating the Deno Js runtime collecting parameters and executing a script.
-use deno_core::{
-    anyhow::{anyhow, Error as AnyError},
-    op, Extension, JsRuntime, Op, OpState, RuntimeOptions, Snapshot,
-};
+use deno_core::{Extension, JsRuntime, RuntimeOptions};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use std::{
-    borrow::Cow,
-    sync::mpsc::{channel, Sender},
-};
 
 // A reasonable default starting limit for our deno heap.
 const APOLLO_ROUTER_BRIDGE_EXPERIMENTAL_V8_INITIAL_HEAP_SIZE_DEFAULT: &str = "256";
@@ -44,50 +37,41 @@ impl Js {
         Ok(self)
     }
 
-    pub(crate) fn execute<Ok: DeserializeOwned + 'static>(
+    pub(crate) fn execute<OkResult: DeserializeOwned + 'static>(
         &self,
         name: &'static str,
         source: &'static str,
-    ) -> Result<Ok, Error> {
-        // We'll use this channel to get the results
-        let (tx, rx) = channel::<Result<Ok, Error>>();
-
-        let happy_tx = tx.clone();
-
-        let my_ext = Extension {
+    ) -> Result<OkResult, Error> {
+        let noop_ext = Extension {
             name: env!("CARGO_PKG_NAME"),
-            ops: Cow::Borrowed(&[deno_result::<Ok>::DECL]),
-            op_state_fn: Some(Box::new(move |state: &mut OpState| {
-                state.put(happy_tx);
-            })),
             ..Default::default()
         };
 
-        let mut runtime = self.build_js_runtime(my_ext);
+        let mut runtime = self.build_js_runtime(noop_ext);
 
         for parameter in self.parameters.iter() {
             runtime
-                .execute_script(
-                    parameter.0,
-                    deno_core::FastString::Owned(parameter.1.clone().into()),
-                )
+                .execute_script(parameter.0, parameter.1.clone())
                 .expect("unable to evaluate service list in JavaScript runtime");
         }
 
-        // We are sending the error through the channel already
-        let _ = runtime
-            .execute_script(name, deno_core::FastString::Static(source))
-            .map_err(|e| {
+        match runtime.execute_script(name, source) {
+            Ok(execute_result) => {
+                let scope = &mut runtime.handle_scope();
+                let local = deno_core::v8::Local::new(scope, execute_result);
+                match deno_core::serde_v8::from_v8::<OkResult>(scope, local) {
+                    Ok(result) => Ok(result),
+                    Err(e) => Err(Error::DenoRuntime(format!(
+                        "unable to deserialize result of `{name}` in JavaScript runtime \n error: \n {e:?}"
+                    ))),
+                }
+            }
+            Err(e) => {
                 let message =
                     format!("unable to invoke `{name}` in JavaScript runtime \n error: \n {e:?}");
-
-                tx.send(Err(Error::DenoRuntime(message)))
-                    .expect("channel must be open");
-
-                e
-            });
-
-        rx.recv().expect("channel remains open")
+                Err(Error::DenoRuntime(message))
+            }
+        }
     }
 
     pub(crate) fn build_js_runtime(&self, my_ext: Extension) -> JsRuntime {
@@ -127,10 +111,6 @@ impl Js {
                 // not needed in the planner
                 false
             }
-
-            fn check_unstable(&self, _state: &deno_core::OpState, _api_name: &'static str) {
-                unreachable!("not needed in the planner")
-            }
         }
 
         #[cfg(not(all(target_os = "macos", target_arch = "x86_64")))]
@@ -143,7 +123,7 @@ impl Js {
                 deno_crypto::deno_crypto::init_ops(None),
                 my_ext,
             ],
-            startup_snapshot: Some(Snapshot::Static(buffer)),
+            startup_snapshot: Some(buffer),
             ..Default::default()
         });
 
@@ -168,13 +148,13 @@ impl Js {
             // functions for interacting with it.
             let runtime_str = include_str!("../bundled/runtime.js");
             js_runtime
-                .execute_script("<init>", deno_core::FastString::Owned(runtime_str.into()))
+                .execute_script("<init>", runtime_str)
                 .expect("unable to initialize router bridge runtime environment");
 
             // Load the composition library.
             let bridge_str = include_str!("../bundled/bridge.js");
             js_runtime
-                .execute_script("bridge.js", deno_core::FastString::Owned(bridge_str.into()))
+                .execute_script("bridge.js", bridge_str)
                 .expect("unable to evaluate bridge module");
             js_runtime
         };
@@ -196,16 +176,4 @@ impl Js {
         });
         js_runtime
     }
-}
-
-#[op]
-fn deno_result<Response>(state: &mut OpState, payload: Response) -> Result<(), AnyError>
-where
-    Response: DeserializeOwned + 'static,
-{
-    // we're cloning here because we don't wanna keep the borrow across an await point
-    let sender = state.borrow::<Sender<Result<Response, Error>>>().clone();
-    sender
-        .send(Ok(payload))
-        .map_err(|e| anyhow!("couldn't send response {e}"))
 }
