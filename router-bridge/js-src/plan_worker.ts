@@ -249,10 +249,13 @@ async function run() {
     // there won't be any messageId to send a payload back to the router,
     // unless we keep it in this scope.
     let messageId;
+    let payload;
     try {
       messageId = "";
+      payload = "";
       const { id, payload: event } = await receive();
       messageId = id;
+      payload = event;
       try {
         switch (event?.kind) {
           case PlannerEventKind.UpdateSchema:
@@ -329,6 +332,15 @@ async function run() {
       }
     } catch (e) {
       logger.warn(`plan_worker: an unknown error occurred ${e}\n`);
+      const schemaId = (payload as PlannerEvent).schemaId;
+      print(`plan_worker: an unknown error occurred ${e}\n${JSON.stringify(
+        payload
+      )}\n
+      schemaID:\n
+      ${schemaId}\n
+      schema:\n
+      ${planners.get(schemaId).schemaString}
+      `);
 
       const unexpectedError = {
         name: e.name || "unknown",
