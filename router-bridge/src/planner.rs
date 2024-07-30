@@ -703,7 +703,7 @@ impl Default for QueryPlannerConfig {
             incremental_delivery: Some(IncrementalDeliverySupport {
                 enable_defer: Some(false),
             }),
-            graphql_validation: true,
+            graphql_validation: false,
             reuse_query_fragments: None,
             generate_query_fragments: None,
             debug: Default::default(),
